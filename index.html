@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AING Window SaaS V5 - WEB PRO</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-[#F3F5F9]">
+<div class="max-w-[1100px] mx-auto p-3 md:p-6">
+  <div class="bg-[#1C2331] text-white p-5 rounded-[20px] flex justify-between items-center">
+    <div><h1 class="font-black text-xl">AING WINDOW SaaS</h1><p class="text-white/60 text-xs">Sultan Edition - Web Pro</p></div>
+    <div class="text-right"><p class="text-xs text-white/60">Omzet</p><p id="omzet" class="font-bold text-green-300">Rp 0</p></div>
+  </div>
+
+  <div class="grid grid-cols-12 gap-4 mt-4">
+    <!-- KIRI: CAD -->
+    <div class="col-span-12 md:col-span-7">
+      <div class="bg-white rounded-[20px] p-4 shadow-sm">
+        <div class="flex justify-between"><b id="previewTitle">Pratinjau 2D - Sliding</b><span class="text-[10px] bg-blue-100 text-blue-600 px-2 py-1 rounded-full">CAD Real-time</span></div>
+        <canvas id="cad" width="700" height="420" class="w-full mt-3 bg-[#F8F9FA] rounded-xl border"></canvas>
+        <p id="dimText" class="text-center text-[11px] font-bold mt-2"></p>
+      </div>
+      <div class="bg-white rounded-[20px] p-4 shadow-sm mt-4">
+        <h3 class="font-bold text-sm">Tersimpan (Local)</h3><div id="saved" class="mt-2 text-sm"></div>
+      </div>
+    </div>
+    <!-- KANAN: FORM + RAB -->
+    <div class="col-span-12 md:col-span-5">
+      <div class="bg-white rounded-[20px] p-4 shadow-sm">
+        <label class="text-xs font-bold">Nama Pelanggan</label><input id="cust" class="w-full border rounded-lg p-2.5 mt-1" value="Bpk. Sutrisno - Kaliwungu"/>
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div><label class="text-xs font-bold">Lebar (mm)</label><input id="lebar" type="number" class="w-full border rounded-lg p-2.5 mt-1" value="1200"/></div>
+          <div><label class="text-xs font-bold">Tinggi (mm)</label><input id="tinggi" type="number" class="w-full border rounded-lg p-2.5 mt-1" value="1200"/></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div><label class="text-xs font-bold">Tipe</label><select id="type" class="w-full border rounded-lg p-2.5 mt-1"><option>Sliding</option><option>Casement</option><option>Fixed</option></select></div>
+          <div><label class="text-xs font-bold">Kaca</label><select id="kaca" class="w-full border rounded-lg p-2.5 mt-1"><option>Bening</option><option>Es</option><option>Hitam</option></select></div>
+        </div>
+        <div class="mt-3"><label class="text-xs font-bold">Jumlah Daun</label><div class="flex gap-2 mt-1" id="daunWrap"></div></div>
+      </div>
+
+      <div class="bg-[#1C2331] rounded-[20px] p-4 mt-4 text-white shadow">
+        <h3 class="font-bold flex items-center gap-2">🧾 RAB & Estimasi Biaya - Lengkap</h3><hr class="my-3 opacity-10"/>
+        <div id="rab" class="space-y-1 text-sm"></div>
+        <div class="grid grid-cols-2 gap-2 mt-4">
+          <button onclick="saveProject()" class="bg-white text-black rounded-xl py-2.5 font-bold">Simpan</button>
+          <button onclick="buatPDF()" class="bg-[#2B7FFF] rounded-xl py-2.5 font-bold">Cetak PDF</button>
+        </div>
+        <button onclick="wa()" class="w-full mt-2 bg-[#25D366] rounded-xl py-2.5 font-bold">Kirim WA Pelanggan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let panels=2;
+const daunWrap=document.getElementById('daunWrap');
+[1,2,3,4].forEach(n=>{
+  const b=document.createElement('button'); b.textContent=n+' Daun'; b.className='border rounded-full px-4 py-1 text-sm';
+  b.onclick=()=>{panels=n; renderDaun(); draw();}; daunWrap.appendChild(b);
+});
+function renderDaun(){[...daunWrap.children].forEach((c,i)=>{c.className=(i+1===panels?'bg-blue-600 text-white border rounded-full px-4 py-1 text-sm':'border rounded-full px-4 py-1 text-sm')});}
+renderDaun();
+
+function draw(){
+  const L=parseInt(document.getElementById('lebar').value)||1200;
+  const T=parseInt(document.getElementById('tinggi').value)||1200;
+  const type=document.getElementById('type').value;
+  const c=document.getElementById('cad'), ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  let scale=(c.width-80)/L; if((c.height-80)/T<scale) scale=(c.height-80)/T;
+  let dw=L*scale, dh=T*scale, ox=(c.width-dw)/2, oy=30;
+  ctx.strokeStyle='#0D47A1'; ctx.lineWidth=1.8; ctx.strokeRect(ox,oy,dw,dh);
+  if(type==='Sliding'){ for(let i=1;i<panels;i++){ let x=ox+(dw/panels)*i; ctx.beginPath(); ctx.moveTo(x,oy); ctx.lineTo(x,oy+dh); ctx.stroke(); } }
+  if(type==='Casement'){ for(let i=0;i<panels;i++){ ctx.strokeStyle='rgba(13,71,161,.5)'; ctx.strokeRect(ox+i*(dw/panels)+4, oy+4, dw/panels-8, dh-8); } ctx.strokeStyle='#0D47A1'; }
+  // dimensi
+  ctx.fillStyle='#0D47A1'; ctx.font='bold 12px sans-serif';
+  ctx.fillText(L+' mm', ox+dw/2-22, oy+dh+18);
+  ctx.save(); ctx.translate(ox+dw+20, oy+dh/2); ctx.rotate(Math.PI/2); ctx.fillText(T+' mm', -22,0); ctx.restore();
+  const luas=L*T/1000000;
+  document.getElementById('dimText').innerText=`Dimensi Luar: ${L} x ${T} mm (${luas.toFixed(2)} m²) - Skala Otomatis ${type}`;
+  document.getElementById('previewTitle').innerText=`Pratinjau 2D - ${type} ${panels} Daun`;
+  const modal=luas>10?20880000:(luas*6000000+8400000), profit=modal*0.3, jual=modal+profit;
+  document.getElementById('rab').innerHTML=`
+    <div class="flex justify-between opacity-70 text-xs"><span>Aluminium ${type} ${(luas*2).toFixed(1)} btg</span><span>Rp ${(modal*0.55).toFixed(0)}</span></div>
+    <div class="flex justify-between opacity-70 text-xs"><span>Kaca ${document.getElementById('kaca').value} ${luas.toFixed(2)} m²</span><span>Rp ${(modal*0.2).toFixed(0)}</span></div>
+    <div class="flex justify-between opacity-70 text-xs"><span>Aksesoris</span><span>Rp ${(modal*0.1).toFixed(0)}</span></div>
+    <div class="flex justify-between opacity-70 text-xs"><span>Sealant & Jasa</span><span>Rp ${(modal*0.15).toFixed(0)}</span></div>
+    <hr class="opacity-10 my-2"/>
+    <div class="flex justify-between"><span>Modal</span><span>Rp ${modal.toFixed(0)}</span></div>
+    <div class="flex justify-between text-blue-300"><span>Profit 30%</span><span>+ Rp ${profit.toFixed(0)}</span></div>
+    <div class="flex justify-between font-black text-lg text-green-300"><span>HARGA JUAL</span><span>Rp ${jual.toFixed(0)}</span></div>`;
+  window._d={L,T,panels,type,luas,modal,profit,jual};
+}
+function saveProject(){
+  const cust=document.getElementById('cust').value;
+  const list=JSON.parse(localStorage.getItem('aing')||'[]');
+  list.unshift({cust,...window._d,date:new Date().toLocaleString('id-ID')});
+  localStorage.setItem('aing',JSON.stringify(list)); load(); alert('Tersimpan!');
+}
+function load(){
+  const list=JSON.parse(localStorage.getItem('aing')||'[]');
+  document.getElementById('saved').innerHTML=list.map(v=>`<div class="border-b py-2"><b>${v.cust}</b> - ${v.type} ${v.L}x${v.T} ${v.panels}Daun<br><span class="text-green-600 font-bold">Rp ${v.jual.toFixed(0)}</span> - ${v.date}</div>`).join('')||'Belum ada';
+  document.getElementById('omzet').innerText='Rp '+(list.reduce((a,b)=>a+b.jual,0)).toLocaleString('id-ID');
+}
+function buatPDF(){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF(); const cust=document.getElementById('cust').value; const d=window._d;
+  doc.setFontSize(16); doc.text('AING WINDOW SAAS - PENAWARAN',10,15);
+  doc.setFontSize(11); doc.text(`Pelanggan: ${cust}`,10,25); doc.text(`Item: ${d.type} ${d.L} x ${d.T} mm, ${d.panels} Daun, Kaca ${document.getElementById('kaca').value}`,10,32);
+  doc.text(`Luas: ${d.luas.toFixed(2)} m2`,10,39); doc.text(`Modal: Rp ${d.modal.toFixed(0)}`,10,46); doc.text(`Profit 30%: Rp ${d.profit.toFixed(0)}`,10,53); doc.text(`HARGA JUAL: Rp ${d.jual.toFixed(0)}`,10,62);
+  doc.text('Terima kasih - AING Aluminium Kaliwungu',10,75);
+  doc.save(`Penawaran-${cust}.pdf`);
+}
+function wa(){
+  const cust=document.getElementById('cust').value; const d=window._d;
+  const txt=`Halo ${cust}, Penawaran ${d.type} ${d.L}x${d.T} mm ${d.panels} daun, Harga Rp ${d.jual.toFixed(0)} dari AING Window. PDF terlampir.`;
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+}
+['lebar','tinggi','type','kaca','cust'].forEach(id=>document.getElementById(id).addEventListener('input',draw));
+draw(); load();
+</script>
+</body>
+</html>
